@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Credit Tracker — ติดตามหน่วยกิต</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e1117;
+    --bg2: #161b27;
+    --bg3: #1e2535;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0f2f7;
+    --text2: #8b93a8;
+    --text3: #5a6278;
+    --accent: #4ade9b;
+    --accent2: #22c47a;
+    --amber: #f59e0b;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --purple: #a78bfa;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ── SIDEBAR ── */
+  .layout { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 50;
+    padding: 0;
+    animation: slideIn 0.4s ease;
+  }
+
+  @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  .sidebar-logo {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+  .logo-sub { font-size: 11px; color: var(--text3); margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  .sidebar-nav { padding: 16px 12px; flex: 1; }
+
+  .nav-section-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; padding: 8px 12px 6px; }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    margin-bottom: 2px;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: rgba(74,222,155,0.12); color: var(--accent); }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  .sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .total-pill {
+    background: rgba(74,222,155,0.1);
+    border: 1px solid rgba(74,222,155,0.2);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+  }
+  .total-pill-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+  .total-pill-val { font-size: 22px; font-weight: 600; color: var(--accent); line-height: 1; }
+  .total-pill-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  /* ── MAIN ── */
+  .main {
+    margin-left: 240px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    background: rgba(14,17,23,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 40;
+  }
+  .topbar-title { font-size: 16px; font-weight: 500; }
+  .topbar-actions { display: flex; gap: 10px; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--bg3); border-color: var(--border2); }
+  .btn-primary {
+    background: var(--accent);
+    color: #0a1a10;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+  .btn svg { width: 14px; height: 14px; }
+
+  .content { padding: 32px; }
+
+  /* ── OVERVIEW CARDS ── */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+    animation: fadeUp 0.5s ease;
+  }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: var(--border2); }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent-bar, transparent);
+  }
+  .stat-card.green::before { --accent-bar: var(--accent); }
+  .stat-card.amber::before { --accent-bar: var(--amber); }
+  .stat-card.red::before { --accent-bar: var(--red); }
+  .stat-card.blue::before { --accent-bar: var(--blue); }
+
+  .stat-icon { width: 32px; height: 32px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+  .stat-icon.green { background: rgba(74,222,155,0.12); }
+  .stat-icon.amber { background: rgba(245,158,11,0.12); }
+  .stat-icon.red { background: rgba(248,113,113,0.12); }
+  .stat-icon.blue { background: rgba(96,165,250,0.12); }
+  .stat-icon svg { width: 16px; height: 16px; }
+  .stat-icon.green svg { color: var(--accent); }
+  .stat-icon.amber svg { color: var(--amber); }
+  .stat-icon.red svg { color: var(--red); }
+  .stat-icon.blue svg { color: var(--blue); }
+
+  .stat-label { font-size: 12px; color: var(--text3); margin-bottom: 6px; }
+  .stat-val { font-size: 28px; font-weight: 600; line-height: 1; }
+  .stat-val.green { color: var(--accent); }
+  .stat-val.amber { color: var(--amber); }
+  .stat-val.red { color: var(--red); }
+  .stat-val.blue { color: var(--blue); }
+  .stat-sub { font-size: 11px; color: var(--text3); margin-top: 6px; }
+
+  /* ── OVERALL PROGRESS ── */
+  .prog-section {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 32px;
+    animation: fadeUp 0.6s ease;
+  }
+  .prog-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+  .prog-title { font-size: 15px; font-weight: 500; }
+  .prog-pct { font-size: 28px; font-weight: 700; color: var(--accent); }
+
+  .prog-track { height: 8px; background: var(--bg3); border-radius: 99px; overflow: hidden; margin-bottom: 12px; }
+  .prog-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+
+  .prog-cats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .prog-cat-chip {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--bg3);
+    border-radius: 99px;
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .prog-cat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── CATEGORIES ── */
+  .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .section-title { font-size: 15px; font-weight: 500; }
+
+  .cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 32px; }
+
+  .cat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    animation: fadeUp 0.5s ease;
+    transition: border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .cat-card:hover { border-color: var(--border2); }
+  .cat-card-stripe { position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+
+  .cat-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+  .cat-card-name { font-size: 15px; font-weight: 600; }
+  .cat-card-actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.2s; }
+  .cat-card:hover .cat-card-actions { opacity: 1; }
+  .icon-btn { background: var(--bg3); border: none; border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text2); transition: all 0.15s; }
+  .icon-btn:hover { background: var(--border2); color: var(--text); }
+  .icon-btn.danger:hover { color: var(--red); }
+  .icon-btn svg { width: 13px; height: 13px; }
+
+  .cat-nums { display: flex; align-items: baseline; gap: 6px; margin-bottom: 12px; }
+  .cat-done { font-size: 26px; font-weight: 700; }
+  .cat-sep { font-size: 16px; color: var(--text3); }
+  .cat-req { font-size: 16px; color: var(--text2); }
+  .cat-unit { font-size: 12px; color: var(--text3); margin-left: 4px; }
+
+  .cat-bar-track { height: 5px; background: var(--bg3); border-radius: 99px; overflow: hidden; margin-bottom: 10px; }
+  .cat-bar-fill { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+
+  .cat-footer { display: flex; justify-content: space-between; align-items: center; }
+  .cat-badge { font-size: 11px; padding: 3px 8px; border-radius: 99px; font-weight: 500; }
+  .badge-done { background: rgba(74,222,155,0.15); color: var(--accent); }
+  .badge-prog { background: rgba(245,158,11,0.15); color: var(--amber); }
+  .badge-none { background: rgba(248,113,113,0.12); color: var(--red); }
+  .cat-short { font-size: 12px; color: var(--red); }
+  .cat-short-ok { font-size: 12px; color: var(--accent); }
+
+  .show-subjects-btn { font-size: 12px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 0; transition: color 0.15s; }
+  .show-subjects-btn:hover { color: var(--text2); }
+
+  /* ── SUBJECTS TABLE ── */
+  .subjects-panel {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-top: 12px;
+    overflow: hidden;
+    display: none;
+  }
+  .subjects-panel.open { display: block; }
+
+  .subjects-panel table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .subjects-panel thead tr { border-bottom: 1px solid var(--border); }
+  .subjects-panel th { padding: 8px 12px; text-align: left; color: var(--text3); font-weight: 400; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .subjects-panel td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text2); }
+  .subjects-panel tr:last-child td { border-bottom: none; }
+  .subjects-panel tr:hover td { background: var(--bg3); }
+  .grade-chip { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+  .grade-A { background: rgba(74,222,155,0.15); color: var(--accent); }
+  .grade-B { background: rgba(96,165,250,0.15); color: var(--blue); }
+  .grade-C { background: rgba(245,158,11,0.15); color: var(--amber); }
+  .grade-D { background: rgba(248,113,113,0.12); color: var(--red); }
+  .grade-F { background: rgba(248,113,113,0.2); color: var(--red); }
+  .grade-P { background: rgba(167,139,250,0.15); color: var(--purple); }
+
+  .subjects-add-row { padding: 8px 12px; }
+  .subjects-add-btn { font-size: 12px; color: var(--text3); background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: color 0.15s; }
+  .subjects-add-btn:hover { color: var(--accent); }
+  .subjects-add-btn svg { width: 12px; height: 12px; }
+
+  /* ── MODAL ── */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .overlay.open { display: flex; }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 28px;
+    width: 420px;
+    max-width: 90vw;
+    animation: modalPop 0.25s ease;
+  }
+  @keyframes modalPop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 12px; color: var(--text3); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-select {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+  }
+  .form-select:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+  /* ── SUBJECTS VIEW ── */
+  .view-panel { display: none; }
+  .view-panel.active { display: block; }
+
+  .subject-table-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .subject-table-wrap table { width: 100%; border-collapse: collapse; }
+  .subject-table-wrap thead { background: var(--bg3); }
+  .subject-table-wrap th { padding: 12px 16px; text-align: left; font-size: 11px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+  .subject-table-wrap td { padding: 12px 16px; border-top: 1px solid var(--border); font-size: 14px; color: var(--text2); vertical-align: middle; }
+  .subject-table-wrap tr:hover td { background: rgba(255,255,255,0.02); }
+  .subject-name-col { color: var(--text) !important; font-weight: 500; }
+  .empty-table { padding: 40px 16px; text-align: center; color: var(--text3); font-size: 14px; }
+
+  /* ── EXPORT ── */
+  .export-section {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+
+  /* ── SEARCH ── */
+  .search-wrap { position: relative; margin-bottom: 16px; }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text3); }
+  .search-icon svg { width: 14px; height: 14px; }
+  .search-input {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px 10px 36px;
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+
+  /* COLOR PICKER */
+  .color-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .color-swatch {
+    width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+  .color-swatch:hover { transform: scale(1.15); }
+  .color-swatch.selected { border-color: white; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 12px 18px;
+    font-size: 13px;
+    display: flex; align-items: center; gap: 8px;
+    z-index: 999;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .sidebar { width: 200px; }
+    .main { margin-left: 200px; }
+    .overview-grid { grid-template-columns: repeat(2, 1fr); }
+    .cat-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">CreditTrack</div>
+      <div class="logo-sub">ระบบติดตามหน่วยกิต</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">เมนูหลัก</div>
+      <button class="nav-item active" onclick="switchView('dashboard')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        ภาพรวม
+      </button>
+      <button class="nav-item" onclick="switchView('subjects')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        รายวิชา
+      </button>
+      <button class="nav-item" onclick="switchView('export')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        Export
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="total-pill">
+        <div class="total-pill-label">ความคืบหน้าทั้งหมด</div>
+        <div class="total-pill-val" id="sidebar-pct">0%</div>
+        <div class="total-pill-sub" id="sidebar-sub">0 / 0 หน่วยกิต</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">ภาพรวมหน่วยกิต</div>
+      <div class="topbar-actions">
+        <button class="btn" onclick="openAddCatModal()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          เพิ่มหมวดหมู่
+        </button>
+        <button class="btn btn-primary" onclick="openAddSubjectModal()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          เพิ่มรายวิชา
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD VIEW -->
+      <div id="view-dashboard" class="view-panel active">
+        <div class="overview-grid" id="overview-grid"></div>
+        <div class="prog-section">
+          <div class="prog-header">
+            <div>
+              <div class="prog-title">ความคืบหน้าทั้งหมด</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px" id="prog-desc">โหลดข้อมูล...</div>
+            </div>
+            <div class="prog-pct" id="prog-pct">0%</div>
+          </div>
+          <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+          <div class="prog-cats" id="prog-cats"></div>
+        </div>
+
+        <div class="section-header">
+          <div class="section-title">หมวดหมู่วิชา</div>
+          <button class="btn" onclick="openAddCatModal()" style="font-size:12px;padding:6px 12px;">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:12px;height:12px;"><path d="M12 5v14M5 12h14"/></svg>
+            เพิ่มหมวด
+          </button>
+        </div>
+        <div class="cat-grid" id="cat-grid"></div>
+      </div>
+
+      <!-- SUBJECTS VIEW -->
+      <div id="view-subjects" class="view-panel">
+        <div class="search-wrap">
+          <div class="search-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+          <input class="search-input" id="subject-search" placeholder="ค้นหาวิชา..." oninput="renderSubjectsTable()">
+        </div>
+        <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;">
+          <span style="font-size:12px;color:var(--text3);">กรองหมวด:</span>
+          <select class="form-select" id="filter-cat" onchange="renderSubjectsTable()" style="width:auto;padding:6px 10px;font-size:13px;">
+            <option value="">ทั้งหมด</option>
+          </select>
+        </div>
+        <div class="subject-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>รหัสวิชา</th>
+                <th>ชื่อวิชา</th>
+                <th>หน่วยกิต</th>
+                <th>เกรด</th>
+                <th>หมวดหมู่</th>
+                <th>ภาคเรียน</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="subjects-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- EXPORT VIEW -->
+      <div id="view-export" class="view-panel">
+        <div class="export-section">
+          <div style="font-size:15px;font-weight:600;margin-bottom:8px;">Export ข้อมูลหน่วยกิต</div>
+          <div style="font-size:13px;color:var(--text3);margin-bottom:20px;">ดาวน์โหลดรายงานสรุปหน่วยกิตและรายวิชาทั้งหมด</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="exportCSV()">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+              Export CSV
+            </button>
+            <button class="btn" onclick="printReport()">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm1-4h.01"/></svg>
+              Print / PDF
+            </button>
+          </div>
+        </div>
+
+        <div id="export-preview" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px;"></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- MODAL: ADD CATEGORY -->
+<div class="overlay" id="modal-cat">
+  <div class="modal">
+    <div class="modal-title" id="modal-cat-title">เพิ่มหมวดหมู่ใหม่</div>
+    <div class="form-group">
+      <label class="form-label">ชื่อหมวดหมู่</label>
+      <input class="form-input" id="cat-name" placeholder="เช่น วิชาเอก, วิชาโท..." />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">หน่วยกิตที่ต้องการ</label>
+        <input class="form-input" type="number" id="cat-req" placeholder="30" min="1" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">หน่วยกิตที่ผ่านแล้ว</label>
+        <input class="form-input" type="number" id="cat-done" placeholder="0" min="0" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">สีประจำหมวด</label>
+      <div class="color-row" id="color-picker"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-cat')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveCategory()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ADD SUBJECT -->
+<div class="overlay" id="modal-subject">
+  <div class="modal">
+    <div class="modal-title" id="modal-subj-title">เพิ่มรายวิชา</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">รหัสวิชา</label>
+        <input class="form-input" id="subj-code" placeholder="CS101" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">หน่วยกิต</label>
+        <input class="form-input" type="number" id="subj-cr" placeholder="3" min="0" step="0.5" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ชื่อวิชา</label>
+      <input class="form-input" id="subj-name" placeholder="การเขียนโปรแกรมเบื้องต้น..." />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">เกรด</label>
+        <select class="form-select" id="subj-grade">
+          <option value="">กำลังเรียน</option>
+          <option value="A">A (4.0)</option>
+          <option value="B+">B+ (3.5)</option>
+          <option value="B">B (3.0)</option>
+          <option value="C+">C+ (2.5)</option>
+          <option value="C">C (2.0)</option>
+          <option value="D+">D+ (1.5)</option>
+          <option value="D">D (1.0)</option>
+          <option value="F">F (0.0)</option>
+          <option value="P">P (ผ่าน)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">หมวดหมู่</label>
+        <select class="form-select" id="subj-cat"></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ภาคเรียน / ปีการศึกษา</label>
+      <input class="form-input" id="subj-sem" placeholder="เช่น 1/2566" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-subject')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveSubject()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <div class="toast-dot"></div>
+  <span id="toast-msg">บันทึกแล้ว</span>
+</div>
+
+<script>
+const PALETTE = ['#4ade9b','#60a5fa','#f59e0b','#f87171','#a78bfa','#34d399','#fb923c','#e879f9','#2dd4bf','#94a3b8'];
+
+let data = JSON.parse(localStorage.getItem('credittrack-v2') || 'null');
+if (!data) {
+  data = {
+    categories: [
+      { id: 1, name: 'วิชาเอก', required: 42, color: '#4ade9b' },
+      { id: 2, name: 'วิชาโท', required: 15, color: '#60a5fa' },
+      { id: 3, name: 'วิชาศึกษาทั่วไป', required: 30, color: '#f59e0b' },
+      { id: 4, name: 'วิชาเลือกเสรี', required: 6, color: '#a78bfa' },
+    ],
+    subjects: [
+      { id: 1, code: 'GE101', name: 'ภาษาไทยเพื่อการสื่อสาร', credits: 3, grade: 'A', catId: 3, semester: '1/2565' },
+      { id: 2, code: 'GE102', name: 'ภาษาอังกฤษพื้นฐาน', credits: 3, grade: 'B+', catId: 3, semester: '1/2565' },
+      { id: 3, code: 'CS101', name: 'การเขียนโปรแกรมเบื้องต้น', credits: 3, grade: 'A', catId: 1, semester: '1/2565' },
+      { id: 4, code: 'CS102', name: 'โครงสร้างข้อมูล', credits: 3, grade: 'B', catId: 1, semester: '2/2565' },
+      { id: 5, code: 'GE201', name: 'คณิตศาสตร์และสถิติ', credits: 3, grade: 'B+', catId: 3, semester: '2/2565' },
+      { id: 6, code: 'CS201', name: 'อัลกอริทึม', credits: 3, grade: '', catId: 1, semester: '1/2566' },
+    ]
+  };
+}
+
+let nextCatId = Math.max(0, ...data.categories.map(c => c.id)) + 1;
+let nextSubjId = Math.max(0, ...data.subjects.map(s => s.id)) + 1;
+let selectedColor = PALETTE[0];
+let editCatId = null;
+let editSubjId = null;
+
+function save() { localStorage.setItem('credittrack-v2', JSON.stringify(data)); }
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function creditsForCat(catId) {
+  return data.subjects
+    .filter(s => s.catId === catId && s.grade && s.grade !== 'F')
+    .reduce((sum, s) => sum + (s.credits || 0), 0);
+}
+
+function totalRequired() { return data.categories.reduce((s, c) => s + c.required, 0); }
+function totalDone() { return data.categories.reduce((s, c) => s + Math.min(creditsForCat(c.id), c.required), 0); }
+
+function gradeClass(g) {
+  if (!g) return '';
+  if (g === 'A') return 'grade-A';
+  if (g.startsWith('B')) return 'grade-B';
+  if (g.startsWith('C')) return 'grade-C';
+  if (g.startsWith('D')) return 'grade-D';
+  if (g === 'F') return 'grade-F';
+  return 'grade-P';
+}
+
+function renderOverview() {
+  const req = totalRequired();
+  const done = totalDone();
+  const short = req - done;
+  const pct = req ? Math.round(done / req * 100) : 0;
+
+  document.getElementById('sidebar-pct').textContent = pct + '%';
+  document.getElementById('sidebar-sub').textContent = `${done} / ${req} หน่วยกิต`;
+  document.getElementById('prog-pct').textContent = pct + '%';
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-desc').textContent = `เรียนไปแล้ว ${done} หน่วยกิต จากทั้งหมด ${req} หน่วยกิต`;
+
+  document.getElementById('overview-grid').innerHTML = `
+    <div class="stat-card green">
+      <div class="stat-icon green"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+      <div class="stat-label">หน่วยกิตที่ผ่านแล้ว</div>
+      <div class="stat-val green">${done}</div>
+      <div class="stat-sub">จาก ${req} หน่วยกิต</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-icon red"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg></div>
+      <div class="stat-label">ยังขาดอีก</div>
+      <div class="stat-val ${short === 0 ? 'green' : 'red'}">${short}</div>
+      <div class="stat-sub">หน่วยกิต</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-icon blue"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
+      <div class="stat-label">รายวิชาทั้งหมด</div>
+      <div class="stat-val blue">${data.subjects.length}</div>
+      <div class="stat-sub">วิชา</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="stat-icon amber"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
+      <div class="stat-label">ความคืบหน้า</div>
+      <div class="stat-val amber">${pct}%</div>
+      <div class="stat-sub">${pct === 100 ? 'ครบแล้ว!' : 'กำลังดำเนินการ'}</div>
+    </div>
+  `;
+
+  const cats = document.getElementById('prog-cats');
+  cats.innerHTML = data.categories.map(c => {
+    const d = Math.min(creditsForCat(c.id), c.required);
+    const p = c.required ? Math.round(d / c.required * 100) : 0;
+    return `<div class="prog-cat-chip"><div class="prog-cat-dot" style="background:${c.color}"></div>${c.name} ${p}%</div>`;
+  }).join('');
+}
+
+function renderCategories() {
+  const grid = document.getElementById('cat-grid');
+  if (!data.categories.length) {
+    grid.innerHTML = '<div style="color:var(--text3);font-size:14px;padding:20px 0;">ยังไม่มีหมวดหมู่ กดปุ่ม "เพิ่มหมวดหมู่" เพื่อเริ่มต้น</div>';
+    return;
+  }
+  grid.innerHTML = data.categories.map(cat => {
+    const done = creditsForCat(cat.id);
+    const pct = cat.required ? Math.min(100, Math.round(done / cat.required * 100)) : 0;
+    const short = Math.max(0, cat.required - done);
+    const badge = pct === 100 ? ['badge-done','ครบแล้ว ✓'] : done > 0 ? ['badge-prog','กำลังเรียน'] : ['badge-none','ยังไม่เริ่ม'];
+    const subjs = data.subjects.filter(s => s.catId === cat.id);
+
+    return `<div class="cat-card" id="catcard-${cat.id}">
+      <div class="cat-card-stripe" style="background:${cat.color}"></div>
+      <div class="cat-card-top">
+        <div class="cat-card-name">${cat.name}</div>
+        <div class="cat-card-actions">
+          <button class="icon-btn" onclick="openEditCat(${cat.id})" title="แก้ไข">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          </button>
+          <button class="icon-btn danger" onclick="deleteCat(${cat.id})" title="ลบ">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="cat-nums">
+        <div class="cat-done" style="color:${cat.color}">${done}</div>
+        <div class="cat-sep">/</div>
+        <div class="cat-req">${cat.required}</div>
+        <div class="cat-unit">หน่วยกิต</div>
+      </div>
+      <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%;background:${cat.color}"></div></div>
+      <div class="cat-footer">
+        <div>
+          <span class="cat-badge ${badge[0]}">${badge[1]}</span>
+        </div>
+        <div>
+          ${short > 0 ? `<span class="cat-short">ขาดอีก ${short} หน่วยกิต</span>` : `<span class="cat-short-ok">ครบแล้ว</span>`}
+        </div>
+      </div>
+      <button class="show-subjects-btn" onclick="toggleSubjectPanel(${cat.id})" style="margin-top:10px;">
+        แสดงรายวิชา (${subjs.length})
+      </button>
+      <div class="subjects-panel" id="subj-panel-${cat.id}">
+        ${subjs.length ? `<table>
+          <thead><tr><th>รหัส</th><th>ชื่อวิชา</th><th>หน่วยกิต</th><th>เกรด</th><th>ภาคเรียน</th><th></th></tr></thead>
+          <tbody>${subjs.map(s => `<tr>
+            <td>${s.code || '-'}</td>
+            <td>${s.name}</td>
+            <td>${s.credits}</td>
+            <td>${s.grade ? `<span class="grade-chip ${gradeClass(s.grade)}">${s.grade}</span>` : '<span style="color:var(--text3)">กำลังเรียน</span>'}</td>
+            <td>${s.semester || '-'}</td>
+            <td><button class="icon-btn danger" onclick="deleteSubject(${s.id})" style="width:22px;height:22px;"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:11px;height:11px;"><path d="M6 18L18 6M6 6l12 12"/></svg></button></td>
+          </tr>`).join('')}</tbody>
+        </table>` : '<div style="padding:12px;font-size:13px;color:var(--text3);">ยังไม่มีรายวิชา</div>'}
+        <div class="subjects-add-row">
+          <button class="subjects-add-btn" onclick="openAddSubjInCat(${cat.id})">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            เพิ่มวิชาในหมวดนี้
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleSubjectPanel(catId) {
+  const panel = document.getElementById(`subj-panel-${catId}`);
+  panel.classList.toggle('open');
+}
+
+function renderSubjectsTable() {
+  const search = document.getElementById('subject-search').value.toLowerCase();
+  const filterCat = document.getElementById('filter-cat').value;
+  let subjs = data.subjects;
+  if (search) subjs = subjs.filter(s => s.name.toLowerCase().includes(search) || (s.code || '').toLowerCase().includes(search));
+  if (filterCat) subjs = subjs.filter(s => s.catId == filterCat);
+
+  const tbody = document.getElementById('subjects-tbody');
+  if (!subjs.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-table">ไม่พบรายวิชา</td></tr>';
+    return;
+  }
+  tbody.innerHTML = subjs.map(s => {
+    const cat = data.categories.find(c => c.id === s.catId);
+    return `<tr>
+      <td style="color:var(--text3);font-size:13px;">${s.code || '-'}</td>
+      <td class="subject-name-col">${s.name}</td>
+      <td>${s.credits}</td>
+      <td>${s.grade ? `<span class="grade-chip ${gradeClass(s.grade)}">${s.grade}</span>` : '<span style="color:var(--text3);font-size:12px;">กำลังเรียน</span>'}</td>
+      <td>${cat ? `<span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:${cat.color};display:inline-block;"></span>${cat.name}</span>` : '-'}</td>
+      <td style="color:var(--text3);font-size:13px;">${s.semester || '-'}</td>
+      <td>
+        <div style="display:flex;gap:4px;">
+          <button class="icon-btn" onclick="openEditSubj(${s.id})"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:12px;height:12px;"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+          <button class="icon-btn danger" onclick="deleteSubject(${s.id})"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:12px;height:12px;"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderFilterCat() {
+  const sel = document.getElementById('filter-cat');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">ทั้งหมด</option>' +
+    data.categories.map(c => `<option value="${c.id}" ${cur == c.id ? 'selected' : ''}>${c.name}</option>`).join('');
+}
+
+function renderSubjCatSelect(selectedId) {
+  const sel = document.getElementById('subj-cat');
+  sel.innerHTML = data.categories.map(c => `<option value="${c.id}" ${c.id == selectedId ? 'selected' : ''}>${c.name}</option>`).join('');
+}
+
+function renderExport() {
+  const req = totalRequired(), done = totalDone(), pct = req ? Math.round(done/req*100) : 0;
+  const preview = document.getElementById('export-preview');
+  preview.innerHTML = `
+    <div style="font-size:20px;font-weight:700;margin-bottom:4px;">รายงานหน่วยกิต</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:20px;">สร้างเมื่อ ${new Date().toLocaleDateString('th-TH')}</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+      <div style="background:var(--bg3);padding:14px;border-radius:var(--radius-sm);">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">หน่วยกิตที่ต้องการ</div>
+        <div style="font-size:20px;font-weight:600;">${req}</div>
+      </div>
+      <div style="background:var(--bg3);padding:14px;border-radius:var(--radius-sm);">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">ผ่านแล้ว</div>
+        <div style="font-size:20px;font-weight:600;color:var(--accent);">${done}</div>
+      </div>
+      <div style="background:var(--bg3);padding:14px;border-radius:var(--radius-sm);">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">คืบหน้า</div>
+        <div style="font-size:20px;font-weight:600;color:var(--amber);">${pct}%</div>
+      </div>
+    </div>
+    ${data.categories.map(cat => {
+      const d = creditsForCat(cat.id);
+      const subjs = data.subjects.filter(s => s.catId === cat.id);
+      return `<div style="margin-bottom:16px;padding:16px;background:var(--bg3);border-radius:var(--radius-sm);border-left:3px solid ${cat.color};">
+        <div style="font-weight:600;margin-bottom:4px;">${cat.name}</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">${d} / ${cat.required} หน่วยกิต (${cat.required?Math.round(d/cat.required*100):0}%)</div>
+        ${subjs.map(s => `<div style="font-size:13px;display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);">
+          <span>${s.code ? s.code+' — ' : ''}${s.name}</span>
+          <span style="color:var(--text3);">${s.credits} หน่วยกิต ${s.grade ? '| '+s.grade : ''}</span>
+        </div>`).join('')}
+      </div>`;
+    }).join('')}
+  `;
+}
+
+function renderAll() {
+  renderOverview();
+  renderCategories();
+  renderSubjectsTable();
+  renderFilterCat();
+  renderExport();
+}
+
+/* COLOR PICKER */
+function renderColorPicker() {
+  document.getElementById('color-picker').innerHTML = PALETTE.map(c =>
+    `<div class="color-swatch ${c === selectedColor ? 'selected' : ''}" style="background:${c}" onclick="selectColor('${c}')"></div>`
+  ).join('');
+}
+function selectColor(c) { selectedColor = c; renderColorPicker(); }
+
+/* MODALS */
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+function openAddCatModal() {
+  editCatId = null;
+  document.getElementById('modal-cat-title').textContent = 'เพิ่มหมวดหมู่ใหม่';
+  document.getElementById('cat-name').value = '';
+  document.getElementById('cat-req').value = '';
+  document.getElementById('cat-done').value = '';
+  selectedColor = PALETTE[data.categories.length % PALETTE.length];
+  renderColorPicker();
+  openModal('modal-cat');
+}
+
+function openEditCat(id) {
+  const cat = data.categories.find(c => c.id === id);
+  if (!cat) return;
+  editCatId = id;
+  document.getElementById('modal-cat-title').textContent = 'แก้ไขหมวดหมู่';
+  document.getElementById('cat-name').value = cat.name;
+  document.getElementById('cat-req').value = cat.required;
+  document.getElementById('cat-done').value = '';
+  selectedColor = cat.color;
+  renderColorPicker();
+  openModal('modal-cat');
+}
+
+function saveCategory() {
+  const name = document.getElementById('cat-name').value.trim();
+  const req = parseInt(document.getElementById('cat-req').value) || 0;
+  if (!name || !req) { toast('กรุณากรอกข้อมูลให้ครบ'); return; }
+
+  if (editCatId) {
+    const cat = data.categories.find(c => c.id === editCatId);
+    cat.name = name; cat.required = req; cat.color = selectedColor;
+  } else {
+    data.categories.push({ id: nextCatId++, name, required: req, color: selectedColor });
+  }
+  save(); renderAll(); closeModal('modal-cat');
+  toast(editCatId ? 'แก้ไขหมวดหมู่แล้ว' : 'เพิ่มหมวดหมู่แล้ว');
+}
+
+function deleteCat(id) {
+  if (!confirm('ลบหมวดหมู่นี้? รายวิชาในหมวดนี้จะถูกลบด้วย')) return;
+  data.categories = data.categories.filter(c => c.id !== id);
+  data.subjects = data.subjects.filter(s => s.catId !== id);
+  save(); renderAll(); toast('ลบหมวดหมู่แล้ว');
+}
+
+function openAddSubjectModal() {
+  editSubjId = null;
+  document.getElementById('modal-subj-title').textContent = 'เพิ่มรายวิชา';
+  document.getElementById('subj-code').value = '';
+  document.getElementById('subj-name').value = '';
+  document.getElementById('subj-cr').value = '';
+  document.getElementById('subj-grade').value = '';
+  document.getElementById('subj-sem').value = '';
+  renderSubjCatSelect(data.categories[0]?.id);
+  openModal('modal-subject');
+}
+
+function openAddSubjInCat(catId) {
+  openAddSubjectModal();
+  renderSubjCatSelect(catId);
+}
+
+function openEditSubj(id) {
+  const s = data.subjects.find(x => x.id === id);
+  if (!s) return;
+  editSubjId = id;
+  document.getElementById('modal-subj-title').textContent = 'แก้ไขรายวิชา';
+  document.getElementById('subj-code').value = s.code || '';
+  document.getElementById('subj-name').value = s.name;
+  document.getElementById('subj-cr').value = s.credits;
+  document.getElementById('subj-grade').value = s.grade || '';
+  document.getElementById('subj-sem').value = s.semester || '';
+  renderSubjCatSelect(s.catId);
+  openModal('modal-subject');
+}
+
+function saveSubject() {
+  const name = document.getElementById('subj-name').value.trim();
+  const credits = parseFloat(document.getElementById('subj-cr').value) || 0;
+  const catId = parseInt(document.getElementById('subj-cat').value);
+  if (!name || !credits) { toast('กรุณากรอกชื่อวิชาและหน่วยกิต'); return; }
+
+  const subj = {
+    code: document.getElementById('subj-code').value.trim(),
+    name, credits, grade: document.getElementById('subj-grade').value,
+    catId, semester: document.getElementById('subj-sem').value.trim()
+  };
+
+  if (editSubjId) {
+    const idx = data.subjects.findIndex(s => s.id === editSubjId);
+    data.subjects[idx] = { ...data.subjects[idx], ...subj };
+  } else {
+    data.subjects.push({ id: nextSubjId++, ...subj });
+  }
+  save(); renderAll(); closeModal('modal-subject');
+  toast(editSubjId ? 'แก้ไขรายวิชาแล้ว' : 'เพิ่มรายวิชาแล้ว');
+}
+
+function deleteSubject(id) {
+  if (!confirm('ลบรายวิชานี้?')) return;
+  data.subjects = data.subjects.filter(s => s.id !== id);
+  save(); renderAll(); toast('ลบรายวิชาแล้ว');
+}
+
+/* VIEWS */
+function switchView(view) {
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  const titles = { dashboard: 'ภาพรวมหน่วยกิต', subjects: 'รายวิชาทั้งหมด', export: 'Export ข้อมูล' };
+  document.getElementById('topbar-title').textContent = titles[view] || '';
+  const navMap = { dashboard: 0, subjects: 1, export: 2 };
+  document.querySelectorAll('.nav-item')[navMap[view]]?.classList.add('active');
+  if (view === 'export') renderExport();
+  if (view === 'subjects') { renderFilterCat(); renderSubjectsTable(); }
+}
+
+/* EXPORT */
+function exportCSV() {
+  const rows = [['รหัสวิชา','ชื่อวิชา','หน่วยกิต','เกรด','หมวดหมู่','ภาคเรียน']];
+  data.subjects.forEach(s => {
+    const cat = data.categories.find(c => c.id === s.catId);
+    rows.push([s.code||'', s.name, s.credits, s.grade||'กำลังเรียน', cat?.name||'', s.semester||'']);
+  });
+  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob(['\ufeff'+csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'credit-tracker.csv'; a.click();
+  toast('Export CSV สำเร็จ');
+}
+
+function printReport() { window.print(); }
+
+/* INIT */
+renderAll();
+</script>
+</body>
+</html>
